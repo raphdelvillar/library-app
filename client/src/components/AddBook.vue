@@ -202,7 +202,6 @@ export default {
     },
     async submit () {
       var reader = {}
-      reader.id = ''
       reader.name = ''
       const response = await AuthenticationService.createBook({
         _id: this.category + '-' + this.isbn,

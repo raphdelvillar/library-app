@@ -67,10 +67,10 @@
               <v-btn @click="viewComment(props.item)" class="blue lighten-2" title="View Comments" icon>
                 <v-icon>reorder</v-icon>
               </v-btn>
-              <v-btn @click="returnBook(props.item)" v-if="props.item.reader.id === user" class="yellow lighten-1" title="Return" icon>
+              <v-btn @click="returnBook(props.item)" v-if="props.item.reader.name === name" class="yellow lighten-1" title="Return" icon>
                 <v-icon>file_upload</v-icon>
               </v-btn>
-              <v-btn @click="checkoutBook(props.item)" v-if="props.item.reader.id === ''" class="yellow lighten-1" title="Checkout" icon>
+              <v-btn @click="checkoutBook(props.item)" v-if="props.item.reader.name === ''" class="yellow lighten-1" title="Checkout" icon>
                 <v-icon>file_download</v-icon>
               </v-btn>
             </td>
@@ -100,6 +100,7 @@ export default {
       alert: '',
       allow_book: '',
       user: this.$cookie.get('username'),
+      name: this.$cookie.get('name'),
       book: {
         'id': '',
         'title': '',

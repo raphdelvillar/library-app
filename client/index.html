@@ -4,6 +4,21 @@
 	  <meta charset="utf-8">
 	  <title>HCG Library Application</title>
 	  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	  <script>
+		var cssRule =
+		    "color: #FF0000;" +
+		    "font-size: 60px;" +
+		    "font-weight: bold;" +
+		    "text-shadow: 1px 1px 5px rgb(249, 162, 34);" +
+		    "filter: dropshadow(color=rgb(249, 162, 34), offx=1, offy=1);";
+		console.log("%cStop!", cssRule);
+		setTimeout(console.log.bind(console, '%cYou are not allowed to access the console', 'color: #000000;'), 0);
+		window.console.log = function(){
+		    window.console.log = function() {
+		        return false;
+		    }
+		}
+		</script>
 	  <!--
 	  <link rel="shortcut icon" href="./src/assets/favicon.ico" type="image/x-icon">
 	  <link rel="icon" href="./src/assets/favicon.ico" type="image/x-icon">

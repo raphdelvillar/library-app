@@ -141,7 +141,6 @@ export default {
       var book = this.$parent.book
       var list = {}
       list.reader = {}
-      list.reader.id = this.$cookie.get('username')
       list.reader.name = this.$cookie.get('name')
       list.rate = this.rate
       list.comment = this.comment
