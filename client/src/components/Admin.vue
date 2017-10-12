@@ -1,15 +1,16 @@
 <template>
   <div id="admin">
     <v-flex xs12 sm12>
-      <div style="height:80px"></div>
+      <div id="header">
+        <br/><h5>{{ this.$cookie.get('name') }} - {{ this.$cookie.get('role') }}</h5>
+      </div>
     </v-flex>
-
     <add-admin v-show="pager == 'add-admin'"></add-admin>
-    <add-book v-show="pager == 'add-book'"></add-book>
-
+    <update-admin v-show="pager == 'update-admin'" :updateUserData="updateUserData"></update-admin>
     <v-layout v-show="e2 == 0">
-      <v-flex xs12 sm10 offset-sm1>
+      <v-flex xs12 sm12>
         <v-card class="rcard" height="450px" style="overflow-y:scroll">
+          <v-progress-linear v-if="alert === 'success'" v-bind:indeterminate="true"></v-progress-linear>
           <v-alert
                   icon="check_circle"
                   v-if="alert === 'success'"
@@ -56,7 +57,7 @@
               <td>{{ props.item.role }}</td>
               <td>{{ props.item.status }}</td>
               <td>
-                <v-btn class="yellow lighten-1" title="Update User" icon>
+                <v-btn @click="updateUser(props.item)" class="yellow lighten-1" title="Update User" icon>
                   <v-icon>mode_edit</v-icon>
                 </v-btn>
                 <v-btn @click="deleteUser(props.item.id, props.item.rev)" class="red lighten-1" title="Delete User" icon>
@@ -69,9 +70,7 @@
       </v-flex>
     </v-layout>
 
-    <v-layout v-show="e2 == 1">
-      <my-library></my-library>
-    </v-layout>
+    <my-library></my-library>
     <v-card height="50px">
       <v-bottom-nav
         absolute
@@ -105,16 +104,19 @@
 <script>
 import AuthenticationService from '@/services/AuthenticationService'
 import AddAdmin from '@/components/AddAdmin'
-import AddBook from '@/components/AddBook'
+import UpdateAdmin from '@/components/UpdateAdmin'
 import Library from '@/components/Library'
+import AddBook from '@/components/AddBook'
+import UpdateBook from '@/components/UpdateBook'
 
 export default {
   data () {
     return {
+      updateUserData: '',
       alert: '',
       message: '',
       status: false,
-      allow_book: true,
+      allow_book: 'Admin',
       pager: '',
       e2: 0,
       search: '',
@@ -162,27 +164,47 @@ export default {
   components: {
     'my-library': Library,
     'add-admin': AddAdmin,
-    'add-book': AddBook
+    'update-admin': UpdateAdmin,
+    'add-book': AddBook,
+    'update-book': UpdateBook
   },
   methods: {
+    isLoggedIn () {
+      if (this.$cookie.get('role') === 'Reader') {
+        this.$router.push('/reader')
+      } else if (this.$cookie.get('role') === 'Admin') {
+        this.$router.push('/admin')
+      } else if (this.$cookie.get('role') === 'Librarian') {
+        this.$router.push('/librarian')
+      } else {
+        this.$router.push('/')
+      }
+    },
     logout () {
+      this.$cookie.delete('username')
+      this.$cookie.delete('role')
       this.$router.push('/')
     },
     addUser () {
       this.pager = 'add-admin'
       this.e2 = 999
     },
+    updateUser (data) {
+      this.updateUserData = data
+      this.pager = 'update-admin'
+      this.e2 = 999
+    },
     async deleteUser (id, rev) {
       var r = confirm('Are you sure you want to delete?')
       if (r === true) {
         const response = await AuthenticationService.deleteUser({
-          id: id,
-          rev: rev
+          _id: id,
+          _rev: rev
         })
         var self = this
         if (response.data.message === 'success') {
           this.alert = 'success'
-          this.message = 'User has been successfully deleted!'
+          this.message = 'User has been successfully deleted! Data will refresh in 5 seconds.'
           this.status = true
           setTimeout(function () { self.alert = ''; self.message = ''; self.status = false; self.getUser() }, 5000)
         } else {
@@ -193,21 +215,8 @@ export default {
       }
     },
     async getUser () {
-      var container = []
       const response = await AuthenticationService.getAdmin({})
-      response.data.forEach(function (v, k) {
-        var list = {}
-        list.value = false
-        list.id = v['key']['_id']
-        list.rev = v['key']['_rev']
-        list.name = v['key']['firstname'] + ' ' + v['key']['lastname']
-        list.email = v['key']['email']
-        list.phone = v['key']['phone']
-        list.role = v['key']['role']
-        list.status = v['key']['status']
-        container.push(list)
-      })
-      this.items = container
+      this.items = response.data
     },
     deactivate (val) {
       this.pager = ''
@@ -215,12 +224,23 @@ export default {
     }
   },
   created () {
+    this.isLoggedIn()
     this.getUser()
   }
 }
 </script>
 
 <style scoped>
+#header {
+  height:80px;
+  background-color:#42A5F5
+}
+
+#header h5 {
+  margin-left: 2%;
+  color: #FFFFFF
+}
+
 .rcard {
   background-color: #FFFFFF;
 }

@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+import VueCookie from 'vue-cookie'
 
 // import Hello from '@/components/Hello'
 import Login from '@/components/Login'
@@ -9,6 +10,7 @@ import Librarian from '@/components/Librarian'
 import Reader from '@/components/Reader'
 
 Vue.use(Router)
+Vue.use(VueCookie)
 
 export default new Router({
   routes: [

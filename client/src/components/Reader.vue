@@ -1,12 +1,12 @@
 <template>
   <div id="reader">
     <v-flex xs12 sm12>
-      <div style="height:80px"></div>
+      <div id="header">
+        <br/><h5>{{ this.$cookie.get('name') }} - {{ this.$cookie.get('role') }}</h5>
+      </div>
     </v-flex>
 
-    <v-layout v-show="e2 == 0">
-      <my-library></my-library>
-    </v-layout>
+    <my-library></my-library>
     <v-card height="50px">
       <v-bottom-nav
         absolute
@@ -38,7 +38,7 @@ import Library from '@/components/Library'
 export default {
   data () {
     return {
-      allow_book: false,
+      allow_book: 'Reader',
       pager: '',
       e2: 0
     }
@@ -47,18 +47,44 @@ export default {
     'my-library': Library
   },
   methods: {
+    isLoggedIn () {
+      if (this.$cookie.get('role') === 'Reader') {
+        this.$router.push('/reader')
+      } else if (this.$cookie.get('role') === 'Admin') {
+        this.$router.push('/admin')
+      } else if (this.$cookie.get('role') === 'Librarian') {
+        this.$router.push('/librarian')
+      } else {
+        this.$router.push('/')
+      }
+    },
     logout () {
+      this.$cookie.delete('username')
+      this.$cookie.delete('role')
       this.$router.push('/')
     },
     deactivate (val) {
       this.pager = ''
       this.e2 = val
     }
+  },
+  created () {
+    this.isLoggedIn()
   }
 }
 </script>
 
 <style scoped>
+#header {
+  height:80px;
+  background-color:#42A5F5
+}
+
+#header h5 {
+  margin-left: 2%;
+  color: #FFFFFF
+}
+
 .rcard {
   background-color: #FFFFFF;
 }

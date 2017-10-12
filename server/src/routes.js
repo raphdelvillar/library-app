@@ -1,13 +1,31 @@
-var nano = require('nano')('http://localhost:5984')
-var passwordHash = require('password-hash')
+const nano = require('nano')('http://localhost:5984')
+const passwordHash = require('password-hash')
+const dbuser = nano.use('hcg_library_users')
+const dbbook = nano.use('hcg_library_book')
 
 module.exports = (app) => {
 	//get auto increment api route
 	app.get('/admin/getUserID', (req, res) => {
-		var db = nano.use('hcg_library_users')
-		db.view('all', 'view_ai', function (err, body) {
+		dbuser.view('all', 'view_ai', (err, body) => {
 			if(!err){
 				res.send(body.rows)
+			} else {
+				res.send({
+					message: 'failure'
+				})
+			}
+		})
+	})
+	//get username
+	app.post('/admin/getUsername', (req, res) => {
+		dbuser.view('all', 'getusername', {'key': req.body._id}, (err, body) => {
+			if (!err) {
+				if (body.rows[0]) {
+					res.send({
+						id: body._id,
+						username: body.rows[0].value
+					})
+				}
 			} else {
 				res.send({
 					message: 'failure'
@@ -18,11 +36,12 @@ module.exports = (app) => {
 
 	//login
 	app.post('/login', (req, res) => {
-		var db = nano.use('hcg_library_users')
-		db.get(req.body.username, function (err, body) {
+		dbuser.get(req.body.username, (err, body) => {
 			if (passwordHash.verify(req.body.password, body.password)) {
 				if(body.status == 'Active') {
 				    res.send({
+				    	username: req.body.username,
+				    	name: body.firstname + ' ' + body.lastname,
 					    role: body.role,
 					    message: 'success'
 				    })
@@ -41,9 +60,8 @@ module.exports = (app) => {
 
 	//library register
 	app.post('/register', (req, res) => {
-		var db = nano.use('hcg_library_users')
 		req.body.password = passwordHash.generate(req.body.password)
-		db.insert(req.body, req.body.id, function (err, body) {
+		dbuser.insert(req.body, req.body._id, (err, body) => {
 		    if (!err) {
 		    	res.send({
 		    		message: 'success'
@@ -59,37 +77,35 @@ module.exports = (app) => {
 	/** ADMIN **/
 	//read user
 	app.get('/admin/get', (req, res) => {
-		var db = nano.use('hcg_library_users')
-		db.view('all', 'view_all', function (err, body) {
+		var container = []
+		dbuser.view('all', 'view_all', (err, body) => {
 			if (!err) {
-				res.send(body.rows)
-			} else {
-				res.send({
-					message: 'failure'
-				})
-			}
-		})
-	})
-	//create user
-	app.post('/admin/createUser', (req, res) => {
-		var db = nano.use('hcg_library_users')
-		req.body.password = passwordHash.generate(req.body.password)
-		db.insert(req.body, req.body.username, function (err, body) {
-			if (!err) {
-				res.send({
-					message: 'success'
-				})
-			} else {
-				res.send({
-					message: 'failure'
-				})
-			}
+				body.rows.forEach( (v, k) => {
+					var list = {}
+			        list.value = false
+			        list.id = v['key']['_id']
+			        list.rev = v['key']['_rev']
+			        list.name = v['key']['firstname'] + ' ' + v['key']['lastname']
+			        list.password = v['key']['password']
+			        list.firstname = v['key']['firstname']
+			        list.lastname = v['key']['lastname']
+			        list.email = v['key']['email']
+			        list.phone = v['key']['phone']
+			        list.role = v['key']['role']
+			        list.status = v['key']['status']
+		        	container.push(list)
+			    })	
+			    res.send(container)
+		    } else {
+		    	res.send({
+		    		message: 'failure'
+		    	})
+		    }
 		})
 	})
 	//delete user
 	app.post('/admin/deleteUser', (req, res) => {
-		var db = nano.use('hcg_library_users')
-		db.destroy(req.body.id, req.body.rev, function(err, body) {
+		dbuser.destroy(req.body._id, req.body._rev, (err, body) => {
 			if (!err) {
 				res.send({
 					message: 'success'
@@ -101,28 +117,59 @@ module.exports = (app) => {
 			}
 		})
 	})
-	//set user
-	app.patch('/admin/setUser', (req, res) => {
-	})
-
-	/** LIBRARIAN **/
-	//read book
-	app.post('/librarian/get', (req, res) => {
-		var db = nano.use('hcg_library_book')
-		db.view('all', 'view_all', function (err, body) {
+	//update user
+	app.post('/admin/updateUser', (req, res) => {
+		if (!passwordHash.isHashed(req.body.password)) {
+			req.body.password = passwordHash.generate(req.body.password)
+		}
+		dbuser.insert(req.body, req.body._id, (err, body) => {
 			if (!err) {
-				res.send(body.rows)
+				res.send({
+					message: 'success'
+				})
 			} else {
+				console.log(err)
 				res.send({
 					message: 'failure'
 				})
 			}
 		})
 	})
+
+	/** LIBRARIAN **/
+	//read book
+	app.get('/librarian/get', (req, res) => {
+		var container = []
+		dbbook.view('all', 'view_all', (err, body) => {
+			if (!err) {
+				body.rows.forEach( (v, k) => {
+					var list = {}
+					list.value = false
+		        	list._id = v['key']['_id']
+		        	list.id = v['key']['_id']
+		        	list.name = v['key']['name']
+		        	list.isbn = v['key']['isbn']
+		        	list.gencat = v['key']['gencat']
+		        	list.genre = v['key']['genre']
+		        	list.category = v['key']['category']
+		        	list.author = v['key']['author']
+		        	list.published_date = v['key']['published_date']
+		        	list.reader = v['key']['reader']
+		        	list.comments = v['key']['comments']
+		        	list.rev = v['key']['_rev']
+		        	container.push(list)
+			    })
+			    res.send(container)
+		    } else {
+		    	res.send({
+		    		message: 'failure'
+		    	})
+		    }
+		})
+	})
 	//create book
 	app.post('/librarian/createBook', (req,res) => {
-		var db = nano.use('hcg_library_books')
-		db.insert(req.body, req.body.id, function (err, body) {
+		dbbook.insert(req.body, req.body._id, (err, body) => {
 			if (!err) {
 				res.send({
 					message: 'success'
@@ -135,20 +182,8 @@ module.exports = (app) => {
 		})
 	})
 	//update book
-	app.put('/librarian/updateBook', (req, res) => {
-	})
-	//delete book
-	app.delete('/librarian/deleteBook', (req, res) => {
-	})
-	//set book
-	app.patch('/librarian/setBook', (req, res) => {
-	})
-
-	/** READER **/
-	//comment book
-	app.post('/reader/comment', (req, res) => {
-		var db = nano.use('hcg_library_comment')
-		db.insert(req.body, req.body.id, function (err, body) {
+	app.post('/librarian/updateBook', (req, res) => {
+		dbbook.insert(req.body, req.body._id, (err, body) => {
 			if (!err) {
 				res.send({
 					message: 'success'
@@ -160,15 +195,73 @@ module.exports = (app) => {
 			}
 		})
 	})
-	//set book
-	app.patch('/reader/setBook', (req, res) => {
+	//delete book
+	app.post('/librarian/deleteBook', (req, res) => {
+		dbbook.destroy(req.body._id, req.body._rev, (err, body) => {
+			if (!err) {
+				res.send({
+					message: 'success'
+				})
+			} else {
+				res.send({
+					message: 'failure'
+				})
+			}
+		})
+	})
+
+	/** READER **/
+	//checkout book
+	app.post('/reader/checkout', (req, res) => {
+		dbbook.insert(req.body, req.body._id, (err, body) => {
+			console.log(err)
+			if (!err) {
+				res.send({
+					message: 'success'
+				})
+			} else {
+				res.send({
+					message: 'failure'
+				})
+			}
+		})
+	})
+	//return book
+	app.post('/reader/return', (req, res) => {
+		dbbook.insert(req.body, req.body._id, (err, body) => {
+			if (!err) {
+				res.send({
+					message: 'success'
+				})
+			} else {
+				res.send({
+					message: 'failure'
+				})
+			}
+		})
+	})
+
+
+	//comment book
+	app.post('/reader/createComment', (req, res) => {
+		dbbook.insert(req.body, req.body._id, (err, body) => {
+			console.log(req.body)
+			if (!err) {
+				res.send({
+					message: 'success'
+				})
+			} else {
+				res.send({
+					message: 'failure'
+				})
+			}
+		})
 	})
 	//get comment
-	app.get('/reader/get', (req, res) => {
-		var db = nano.use('hcg_library_comment')
-		db.view('all', 'view_all', function (err, body) {
+	app.post('/reader/get', (req, res) => {
+		dbbook.view('all', 'getcomment', {'key': req.body.id}, (err, body) => {
 			if (!err) {
-				res.send(body.rows)
+				res.send(body.rows[0].value)
 			} else {
 				res.send({
 					message: 'failure'

@@ -1,10 +1,10 @@
 <template>
-  <div id="addBook">
+  <div id="updateBook">
     <v-layout>
       <v-flex xs12 sm7 offset-sm1>
         <v-card class="lcard" height="450px">
           <v-toolbar class="indigo">
-            <v-toolbar-title>Add Book</v-toolbar-title>
+            <v-toolbar-title>Update Book</v-toolbar-title>
           </v-toolbar>
           <div class="pa-2">
             <v-stepper v-model="e1" class="white">
@@ -101,7 +101,7 @@
                   transition="scale-transition"
                   style="background-color: green"
                 >
-                  A new book has been created! You'll be redirected to the book page after 3 seconds.
+                  Book has been updated! You'll be redirected to book page after 3 seconds.
                 </v-alert>
                 <v-alert
                   icon="warning"
@@ -151,6 +151,7 @@
 <script>
 import AuthenticationService from '@/services/AuthenticationService'
 export default {
+  props: ['updateBookData'],
   data () {
     return {
       e1: 0,
@@ -159,31 +160,44 @@ export default {
       valid1: false,
       valid2: false,
       isbn: '',
+      name: '',
+      genre: '',
+      category: '',
+      author: '',
+      published_date: '',
+      rev: '',
       isbnRules: [
         v => !!v || 'ISBN is required'
       ],
-      name: '',
       nameRules: [
         v => !!v || 'Name is required'
       ],
-      genre: '',
       genreRules: [
         v => !!v || 'Genre is required'
       ],
-      category: '',
       categoryRules: [
         v => !!v || 'Category is required'
       ],
-      author: '',
       authorRules: [
         v => !!v || 'Author is required'
       ],
-      published_date: {
-        time: ''
-      },
       publishedDateRules: [
         v => !!v || 'Published Date is required'
       ]
+    }
+  },
+  watch: {
+    updateBookData: function () {
+      console.log(this.updateBookData)
+      this.isbn = this.updateBookData.isbn
+      this.name = this.updateBookData.name
+      this.genre = this.updateBookData.genre
+      this.category = this.updateBookData.category
+      this.author = this.updateBookData.author
+      this.published_date = this.updateBookData.published_date
+      this.rev = this.updateBookData.rev
+      this.reader = this.updateBookData.reader
+      this.comments = this.updateBookData.comments
     }
   },
   methods: {
@@ -201,11 +215,9 @@ export default {
       this.published_date = ''
     },
     async submit () {
-      var reader = {}
-      reader.id = ''
-      reader.name = ''
-      const response = await AuthenticationService.createBook({
+      const response = await AuthenticationService.updateBook({
         _id: this.category + '-' + this.isbn,
+        _rev: this.rev,
         name: this.name,
         isbn: this.isbn,
         gencat: this.genre + '/' + this.category,
@@ -213,10 +225,9 @@ export default {
         category: this.category,
         author: this.author,
         published_date: this.published_date,
-        reader: reader,
-        comments: []
+        reader: this.reader,
+        comments: this.comments
       })
-
       var self = this
       if (response.data.message === 'success') {
         this.alert = 'success'

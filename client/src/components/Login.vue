@@ -90,6 +90,12 @@ export default {
           username: this.username,
           password: this.password
         })
+        if (response.data.message === 'success') {
+          this.$cookie.set('username', response.data.username)
+          this.$cookie.set('name', response.data.name)
+          this.$cookie.set('role', response.data.role)
+        }
+
         if (response.data.message === 'success' && response.data.role === 'Admin') {
           this.$router.push('/admin')
         } else if (response.data.message === 'success' && response.data.role === 'Librarian') {
@@ -97,7 +103,7 @@ export default {
         } else if (response.data.message === 'success' && response.data.role === 'Reader') {
           this.$router.push('/reader')
         } else if (response.data.message === 'failure') {
-
+          alert('Access Denied!')
         }
       }
     }

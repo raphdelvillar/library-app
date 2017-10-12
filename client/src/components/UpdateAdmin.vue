@@ -1,15 +1,15 @@
 <template>
-  <div id="addAdmin">
+  <div id="updateAdmin">
     <v-layout>
       <v-flex xs12 sm7 offset-sm1>
         <v-card class="lcard" height="450px">
           <v-toolbar class="indigo">
-            <v-toolbar-title>Add User</v-toolbar-title>
+            <v-toolbar-title>Update User</v-toolbar-title>
           </v-toolbar>
           <div class="pa-2">
             <v-stepper v-model="e1" class="white">
               <v-stepper-header>
-                <v-stepper-step step="1" :complete="e1 > 1">Account Creation</v-stepper-step>
+                <v-stepper-step step="1" :complete="e1 > 1">Account Details</v-stepper-step>
                 <v-divider></v-divider>
                 <v-stepper-step step="2" :complete="e1 > 2">Personal Details</v-stepper-step>
                 <v-divider></v-divider>
@@ -29,25 +29,21 @@
                     </v-flex>
                   </v-layout>
                   <v-layout row>
-                    <v-flex xs5>
-                      <v-text-field
-                        label="Password"
-                        v-model="password"
-                        value=""
-                        type="password"
-                        class="input-group--focused"
-                        :rules="passwordRules"
-                        required
-                      ></v-text-field>
-                    </v-flex>
-                  </v-layout>
-                  <v-layout row>
                     <v-flex xs5><br/>
                       <p><b>Please select user role:</b></p>
                       <v-radio-group v-model="role" :mandatory="true" :rules="roleRules">
                         <v-radio label="Admin" value="Admin"></v-radio>
                         <v-radio label="Librarian" value="Librarian"></v-radio>
                         <v-radio label="Reader" value="Reader"></v-radio>
+                      </v-radio-group>
+                    </v-flex>
+                  </v-layout>
+                  <v-layout row>
+                    <v-flex xs5><br/>
+                      <p><b>Please select user status:</b></p>
+                      <v-radio-group v-model="status" :mandatory="true" :rules="statusRules">
+                        <v-radio label="Active" value="Active"></v-radio>
+                        <v-radio label="Inactive" value="Inactive"></v-radio>
                       </v-radio-group>
                     </v-flex>
                   </v-layout>
@@ -135,7 +131,7 @@
                   transition="scale-transition"
                   style="background-color: green"
                 >
-                  User have been successfully registered! You'll be redirected to admin page after 3 seconds.
+                  User have been successfully updated! You'll be redirected to admin page after 3 seconds.
                 </v-alert>
                 <v-alert
                   icon="warning"
@@ -184,6 +180,7 @@
 <script>
 import AuthenticationService from '@/services/AuthenticationService'
 export default {
+  props: ['updateUserData'],
   data () {
     return {
       e1: 0,
@@ -193,36 +190,51 @@ export default {
       valid2: false,
       id: '',
       password: '',
-      passwordRules: [
-        v => !!v || 'Password is required'
-      ],
       firstname: '',
+      lastname: '',
+      email: '',
+      phone: '',
+      role: '',
+      status: '',
+      rev: '',
       firstnameRules: [
         v => !!v || 'Firstname is required'
       ],
-      lastname: '',
       lastnameRules: [
         v => !!v || 'Lastname is required'
       ],
-      email: '',
       emailRules: [
         v => !!v || 'Email is required',
         v => /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v) || 'E-mail must be valid'
       ],
-      phone: '',
       phoneRules: [
         v => !!v || 'Phone is required'
       ],
-      role: '',
       roleRules: [
         v => !!v || 'Please pick a role'
       ],
-      status: 'Active'
+      statusRules: [
+        v => !!v || 'Please pick a status'
+      ]
     }
   },
+  watch: {
+    updateUserData: function () {
+      this.id = this.updateUserData.id
+      this.password = this.updateUserData.password
+      this.firstname = this.updateUserData.firstname
+      this.lastname = this.updateUserData.lastname
+      this.email = this.updateUserData.email
+      this.phone = this.updateUserData.phone
+      this.role = this.updateUserData.role
+      this.status = this.updateUserData.status
+      this.rev = this.updateUserData.rev
+    }
+  },
+
   methods: {
     init () {
-      this.e1 = 0
+      this.e1 = 1
       this.alert = ''
       this.message = false
       this.valid1 = false
@@ -237,22 +249,10 @@ export default {
       this.status = 'Active'
       this.getUser()
     },
-    async getUser () {
-      var container = []
-      const response = await AuthenticationService.getUserID({})
-      response.data.forEach(function (v, k) {
-        container.push(parseInt(v['id']))
-      })
-
-      for (var a = 1; this.id === ''; a++) {
-        if (container.includes(a) === false) {
-          this.id = '' + a
-        }
-      }
-    },
     async submit () {
-      const response = await AuthenticationService.register({
+      const response = await AuthenticationService.updateUser({
         _id: this.id,
+        _rev: this.rev,
         password: this.password,
         firstname: this.firstname,
         lastname: this.lastname,
@@ -282,9 +282,6 @@ export default {
     back (val) {
       this.e1 = val
     }
-  },
-  async created () {
-    this.getUser()
   }
 }
 </script>
